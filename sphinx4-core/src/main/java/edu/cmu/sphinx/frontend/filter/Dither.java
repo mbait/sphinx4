@@ -12,15 +12,13 @@
 
 package edu.cmu.sphinx.frontend.filter;
 
-import edu.cmu.sphinx.frontend.*;
-import edu.cmu.sphinx.util.props.PropertyException;
-import edu.cmu.sphinx.util.props.PropertySheet;
-import edu.cmu.sphinx.util.props.S4Boolean;
-import edu.cmu.sphinx.util.props.S4Double;
-
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+
 import java.util.Random;
+
+import edu.cmu.sphinx.frontend.*;
+import edu.cmu.sphinx.util.props.*;
 
 /**
  * Implements a dither for the incoming packet. A small amount of random noise is added
@@ -89,48 +87,27 @@ public class Dither extends BaseDataProcessor {
 
 
     /**
-     * Returns the next DoubleData object, which is a dithered version of the input
-     *
-     * @return the next available DoubleData object, or null if no Data is available
-     * @throws edu.cmu.sphinx.frontend.DataProcessingException
-     *          if a data processing error occurred
-     */
-    @Override
-    public Data getData() throws DataProcessingException {
-        Data input = getPredecessor().getData(); // get the spectrum
-        if (input != null && ditherMax != 0) {
-            if (input instanceof DoubleData || input instanceof FloatData) {
-                input = process(input);
-            }
-        }
-        return input;
-    }
-
-
-    /**
      * Process data, adding dither
      *
-     * @param input a frame
+     * @param data a frame
      * @return processed frame
      * @throws IllegalArgumentException
      */
-    private DoubleData process(Data input) throws IllegalArgumentException {
-        DoubleData output;
+    @Override
+    public Data process(DoubleData data) throws DataProcessingException {
+        if (data == null || ditherMax == 0) {
+            return data;
+        }
 
-        assert input instanceof DoubleData;
-        double[] inFeatures;
-
-        DoubleData doubleData = (DoubleData) input;
-        inFeatures = doubleData.getValues();
+        double[] inFeatures = data.getValues();
         double[] outFeatures = new double[inFeatures.length];
         for (int i = 0; i < inFeatures.length; ++i) {
-            outFeatures[i] = r.nextFloat() * 2 * ditherMax - ditherMax + inFeatures[i];
+            outFeatures[i] =
+                    r.nextFloat() * 2 * ditherMax - ditherMax + inFeatures[i];
             outFeatures[i] = max(min(outFeatures[i], maxValue), minValue);
         }
 
-        output = new DoubleData(outFeatures, doubleData.getSampleRate(),
-                doubleData.getFirstSampleNumber());
-
-        return output;
+        return new DoubleData(outFeatures, data.getSampleRate(),
+                              data.getFirstSampleNumber());
     }
 }

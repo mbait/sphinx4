@@ -13,8 +13,6 @@
 package edu.cmu.sphinx.frontend.frequencywarp;
 
 import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DoubleData;
 import edu.cmu.sphinx.util.props.*;
 
@@ -189,7 +187,8 @@ public class PLPFrequencyFilterBank extends BaseDataProcessor {
      * @throws java.lang.IllegalArgumentException
      *
      */
-    private DoubleData process(DoubleData input) throws
+    @Override
+    public DoubleData process(DoubleData input) throws
             IllegalArgumentException {
 
         double[] in = input.getValues();
@@ -224,31 +223,5 @@ public class PLPFrequencyFilterBank extends BaseDataProcessor {
                         input.getFirstSampleNumber());
 
         return output;
-    }
-
-
-    /**
-     * Reads the next Data object, which is the power spectrum of an audio input frame. However, it can also be other
-     * Data objects like a Signal, which is returned unmodified.
-     *
-     * @return the next available Data object, returns null if no Data object is available
-     * @throws DataProcessingException if there is a data processing error
-     */
-    @Override
-    public Data getData() throws DataProcessingException {
-
-        Data input = getPredecessor().getData();
-
-        getTimer().start();
-
-        if (input != null) {
-            if (input instanceof DoubleData) {
-                input = process((DoubleData) input);
-            }
-        }
-
-        getTimer().stop();
-
-        return input;
     }
 }

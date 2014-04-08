@@ -1,11 +1,11 @@
 /*
- * Copyright 1999-2002 Carnegie Mellon University.  
- * Portions Copyright 2002 Sun Microsystems, Inc.  
+ * Copyright 1999-2002 Carnegie Mellon University.
+ * Portions Copyright 2002 Sun Microsystems, Inc.
  * Portions Copyright 2002 Mitsubishi Electric Research Laboratories.
  * All Rights Reserved.  Use is subject to license terms.
- * 
+ *
  * See the file "license.terms" for information on usage and
- * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
  */
@@ -48,7 +48,7 @@ public class DeltasFeatureExtractor extends AbstractFeatureExtractor {
 
     public DeltasFeatureExtractor( ) {
     }
-    
+
     /**
      * Computes the next feature. Advances the pointers as well.
      *
@@ -63,7 +63,7 @@ public class DeltasFeatureExtractor extends AbstractFeatureExtractor {
         int jf1 = (currentPosition + 1) % cepstraBufferSize;
         int jf2 = (currentPosition + 2) % cepstraBufferSize;
         int jf3 = (currentPosition + 3) % cepstraBufferSize;
-        
+
     	DoubleData currentCepstrum = cepstraBuffer[currentPosition];
         double[] mfc3f = cepstraBuffer[jf3].getValues();
         double[] mfc2f = cepstraBuffer[jf2].getValues();

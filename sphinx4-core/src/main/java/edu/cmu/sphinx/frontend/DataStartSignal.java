@@ -1,11 +1,11 @@
 /*
- * Copyright 1999-2002 Carnegie Mellon University.  
- * Portions Copyright 2002 Sun Microsystems, Inc.  
+ * Copyright 1999-2002 Carnegie Mellon University.
+ * Portions Copyright 2002 Sun Microsystems, Inc.
  * Portions Copyright 2002 Mitsubishi Electric Research Laboratories.
  * All Rights Reserved.  Use is subject to license terms.
- * 
+ *
  * See the file "license.terms" for information on usage and
- * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
  */
@@ -105,5 +105,10 @@ public class DataStartSignal extends Signal {
 
     public static void untagAsVadStream(DataStartSignal dsSignal) {
         dsSignal.getProps().remove(DataStartSignal.SPEECH_TAGGED_FEATURE_STREAM);
+    }
+
+    @Override
+    public Data processBy(DataProcessor processor) {
+        return processor.process(this);
     }
 }

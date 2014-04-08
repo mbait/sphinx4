@@ -13,8 +13,6 @@
 package edu.cmu.sphinx.frontend.transform;
 
 import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DoubleData;
 import edu.cmu.sphinx.util.Complex;
 import edu.cmu.sphinx.util.props.*;
@@ -152,16 +150,39 @@ public class DiscreteFourierTransform extends BaseDataProcessor {
      * @throws java.lang.IllegalArgumentException
      *
      */
-    private DoubleData process(DoubleData input)
+    @Override
+    public DoubleData process(DoubleData input)
             throws IllegalArgumentException {
-
         /**
-         * Create complex input sequence equivalent to the real
-         * input sequence.
-         * If the number of points is less than the window size,
-         * we incur in aliasing. If it's greater, we pad the input
-         * sequence with zeros.
+         * Create complex input sequence equivalent to the real input sequence. If the number of
+         * points is less than the window size, we incur in aliasing. If it's greater, we pad the
+         * input sequence with zeros.
          */
+        if (!isNumberFftPointsSet) {
+            /*
+             * If numberFftPoints is not set by the user, figure out the numberFftPoints and
+             * initialize the data structures appropriately.
+             */
+            if (numberDataPoints != input.getValues().length) {
+                numberDataPoints = input.getValues().length;
+                numberFftPoints = getNumberFftPoints(numberDataPoints);
+                initializeFFT();
+            }
+        } else {
+            /*
+             * Warn if the user-set numberFftPoints is not ideal.
+             */
+            if (numberDataPoints != input.getValues().length) {
+                numberDataPoints = input.getValues().length;
+                int idealFftPoints = getNumberFftPoints(numberDataPoints);
+                if (idealFftPoints != numberFftPoints) {
+                    logger.warning("User set numberFftPoints ("
+                            + numberFftPoints + ") is not ideal ("
+                            + idealFftPoints + ')');
+                }
+            }
+        }
+
         double[] in = input.getValues();
 
         if (numberFftPoints < in.length) {
@@ -254,62 +275,6 @@ public class DiscreteFourierTransform extends BaseDataProcessor {
             weightFft[k] = new Complex(Math.cos(w * k), Math.sin(w * k));
         }
     }
-
-
-    /**
-     * Reads the next DoubleData object, which is a data frame from which we'll compute the power spectrum. Signal
-     * objects just pass through unmodified.
-     *
-     * @return the next available power spectrum DoubleData object, or null if no Spectrum object is available
-     * @throws DataProcessingException if there is a processing error
-     */
-    @Override
-    public Data getData() throws DataProcessingException {
-
-        Data input = getPredecessor().getData();
-
-        getTimer().start();
-
-        if ((input != null) && (input instanceof DoubleData)) {
-            DoubleData data = (DoubleData) input;
-            if (!isNumberFftPointsSet) {
-                /*
-                 * If numberFftPoints is not set by the user,
-                 * figure out the numberFftPoints and initialize the
-                 * data structures appropriately.
-                 */
-                if (numberDataPoints != data.getValues().length) {
-                    numberDataPoints = data.getValues().length;
-                    numberFftPoints = getNumberFftPoints(numberDataPoints);
-                    initializeFFT();
-                }
-            } else {
-                /*
-                 * Warn if the user-set numberFftPoints is not ideal.
-                 */
-                if (numberDataPoints != data.getValues().length) {
-                    numberDataPoints = data.getValues().length;
-                    int idealFftPoints = getNumberFftPoints(numberDataPoints);
-                    if (idealFftPoints != numberFftPoints) {
-                        logger.warning("User set numberFftPoints (" +
-                                numberFftPoints + ") is not ideal (" +
-                                idealFftPoints + ')');
-                    }
-                }
-            }
-            input = process(data);
-        }
-
-        // At this point - or in the call immediatelly preceding
-        // this -, we should have created a cepstrum frame with
-        // whatever data came last, even if we had less than
-        // window size of data.
-
-        getTimer().stop();
-
-        return input;
-    }
-
 
     /**
      * Returns the ideal number of FFT points given the number of samples. The ideal number of FFT points is the closest

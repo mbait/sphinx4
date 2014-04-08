@@ -14,6 +14,7 @@
 package edu.cmu.sphinx.frontend.endpoint;
 
 import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.DataProcessor;
 import edu.cmu.sphinx.frontend.DoubleData;
 
 
@@ -114,5 +115,9 @@ public class SpeechClassifiedData implements Data {
     @Override
     public String toString() {
         return "SpeechClassifiedData containing " + data.toString() + " classified as " + (isSpeech ? "speech" : "non-speech");
+    }
+
+    public Data processBy(DataProcessor processor) {
+        return processor.process(this);
     }
 }

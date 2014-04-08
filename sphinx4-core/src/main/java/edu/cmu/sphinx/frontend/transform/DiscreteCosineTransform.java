@@ -12,10 +12,10 @@
 package edu.cmu.sphinx.frontend.transform;
 
 import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DoubleData;
-import edu.cmu.sphinx.util.props.*;
+import edu.cmu.sphinx.util.props.PropertyException;
+import edu.cmu.sphinx.util.props.PropertySheet;
+import edu.cmu.sphinx.util.props.S4Integer;
 
 /**
  * Applies a logarithm and then a Discrete Cosine Transform (DCT) to the input data. The input data is normally the mel
@@ -64,27 +64,6 @@ public class DiscreteCosineTransform extends BaseDataProcessor {
         super.initialize();
     }
 
-
-    /**
-     * Returns the next DoubleData object, which is the mel cepstrum of the input frame. Signals are returned
-     * unmodified.
-     *
-     * @return the next available DoubleData melcepstrum, or Signal object, or null if no Data is available
-     * @throws DataProcessingException if a data processing error occurred
-     */
-    @Override
-    public Data getData() throws DataProcessingException {
-        Data input = getPredecessor().getData(); // get the spectrum
-        getTimer().start();
-        if (input != null && input instanceof DoubleData) {
-            input = process((DoubleData) input);
-        }
-        getTimer().stop();
-        return input;
-    }
-
-    final static double LOG_FLOOR = 1e-4;
-    
     /**
      * Process data, creating the mel cepstrum from an input spectrum frame.
      *
@@ -92,7 +71,8 @@ public class DiscreteCosineTransform extends BaseDataProcessor {
      * @return a mel Cepstrum frame
      * @throws IllegalArgumentException
      */
-    private DoubleData process(DoubleData input)
+    @Override
+    public DoubleData process(DoubleData input)
             throws IllegalArgumentException {
         double[] melspectrum = input.getValues();
 
@@ -108,7 +88,7 @@ public class DiscreteCosineTransform extends BaseDataProcessor {
         }
         // first compute the log of the spectrum
         for (int i = 0; i < melspectrum.length; ++i) {
-            melspectrum[i] = Math.log(melspectrum[i] + LOG_FLOOR);
+            melspectrum[i] = Math.log(melspectrum[i] + 1e-4);
         }
 
         double[] cepstrum;
@@ -157,7 +137,7 @@ public class DiscreteCosineTransform extends BaseDataProcessor {
                 cepstrum[i] /= period;
             }
         }
-        
+
         return cepstrum;
     }
 }

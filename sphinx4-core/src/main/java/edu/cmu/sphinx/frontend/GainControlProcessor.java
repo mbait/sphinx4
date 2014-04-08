@@ -36,35 +36,29 @@ public class GainControlProcessor extends BaseDataProcessor {
         gainFactor = ps.getDouble(GAIN_FACTOR);
     }
 
-
     @Override
-    public Data getData() throws DataProcessingException {
-        Data data = getPredecessor().getData();
-
-        if (data instanceof FloatData) {
-            float[] values = ((FloatData) data).getValues();
-            if (gainFactor != 1.0) {
-                // apply the gain-factor
-                for (int i = 0; i < values.length; i++) {
-                    values[i] *= gainFactor;
-
-                }
-            }
-
-        } else if (data instanceof DoubleData) {
-            double[] values = ((DoubleData) data).getValues();
-            if (gainFactor != 1.0) {
-                // apply the gain-factor
-                for (int i = 0; i < values.length; i++) {
-                    values[i] *= gainFactor;
-
-                }
+    public Data process(FloatData data) throws DataProcessingException {
+        float[] values = data.getValues();
+        if (gainFactor != 1.0) {
+            // apply the gain-factor
+            for (int i = 0; i < values.length; i++) {
+                values[i] *= gainFactor;
             }
         }
-
         return data;
     }
 
+    @Override
+    public Data process(DoubleData data) throws DataProcessingException {
+        double[] values = data.getValues();
+        if (gainFactor != 1.0) {
+            // apply the gain-factor
+            for (int i = 0; i < values.length; i++) {
+                values[i] *= gainFactor;
+            }
+        }
+        return data;
+    }
 
     public double getGainFactor() {
         return gainFactor;

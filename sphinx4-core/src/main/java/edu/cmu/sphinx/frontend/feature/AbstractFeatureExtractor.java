@@ -11,15 +11,22 @@
  */
 package edu.cmu.sphinx.frontend.feature;
 
-import edu.cmu.sphinx.frontend.*;
-import edu.cmu.sphinx.frontend.endpoint.*;
-import edu.cmu.sphinx.util.props.*;
+import static com.google.common.base.Preconditions.checkState;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedList;
+
+import edu.cmu.sphinx.frontend.*;
+import edu.cmu.sphinx.frontend.endpoint.SpeechEndSignal;
+import edu.cmu.sphinx.util.props.PropertyException;
+import edu.cmu.sphinx.util.props.PropertySheet;
+import edu.cmu.sphinx.util.props.S4Integer;
+
 
 /**
- * Abstract base class for windowed feature extractors like DeltasFeatureExtractor, ConcatFeatureExtractor
- * or S3FeatureExtractor. The main purpose of this it to collect window size cepstra frames in a buffer
+ * Abstract base class for windowed feature extractors like
+ * DeltasFeatureExtractor, ConcatFeatureExtractor or S3FeatureExtractor. The
+ * main purpose of this it to collect window size cepstra frames in a buffer
  * and let the extractor compute the feature frame with them.
  */
 public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
@@ -39,10 +46,10 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
     protected DoubleData[] cepstraBuffer;
 
     /**
-     * 
+     *
      * @param window
      */
-    public AbstractFeatureExtractor( int window ) {
+    public AbstractFeatureExtractor(int window) {
         initLogger();
         this.window = window;
     }
@@ -51,22 +58,23 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
     }
 
     /*
-    * (non-Javadoc)
-    *
-    * @see edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.util.props.PropertySheet)
-    */
+     * (non-Javadoc)
+     * @see
+     * edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.
+     * util.props.PropertySheet)
+     */
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         window = ps.getInt(PROP_FEATURE_WINDOW);
     }
 
-
     /*
-    * (non-Javadoc)
-    *
-    * @see edu.cmu.sphinx.frontend.DataProcessor#initialize(edu.cmu.sphinx.frontend.CommonConfig)
-    */
+     * (non-Javadoc)
+     * @see
+     * edu.cmu.sphinx.frontend.DataProcessor#initialize(edu.cmu.sphinx.frontend
+     * .CommonConfig)
+     */
     @Override
     public void initialize() {
         super.initialize();
@@ -77,63 +85,62 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
         reset();
     }
 
-
-    /** Resets the DeltasFeatureExtractor to be ready to read the next segment of data. */
+    /**
+     * Resets the DeltasFeatureExtractor to be ready to read the next segment
+     * of data.
+     */
     private void reset() {
         bufferPosition = 0;
         currentPosition = 0;
     }
 
+    private Data deque() {
+        checkState(!outputQueue.isEmpty(), "empty queue");
+        return outputQueue.removeFirst();
+    }
 
-    /**
-     * Returns the next Data object produced by this DeltasFeatureExtractor.
-     *
-     * @return the next available Data object, returns null if no Data is available
-     * @throws DataProcessingException if there is a data processing error
-     */
+    public Data process(DoubleData data) throws DataProcessingException {
+        addCepstrum(data);
+        computeFeatures(1);
+        return deque();
+    }
+
     @Override
-    public Data getData() throws DataProcessingException {
-        if (outputQueue.isEmpty()) {
-            Data input = getNextData();
-            if (input != null) {
-                if (input instanceof DoubleData) {
-                    addCepstrum((DoubleData) input);
-                    computeFeatures(1);
-                } else if (input instanceof DataStartSignal) {
-                    pendingSignal = null;
-                    outputQueue.add(input);
-                    Data start = getNextData();
-                    int n = processFirstCepstrum(start);
-                    computeFeatures(n);
-                    if (pendingSignal != null) {
-                        outputQueue.add(pendingSignal);
-                    }
-                } else if (input instanceof DataEndSignal || input instanceof SpeechEndSignal) {
-                    // when the DataEndSignal is right at the boundary
-                    int n = replicateLastCepstrum();
-                    computeFeatures(n);
-                    outputQueue.add(input);
-                }
-            }
-        }
-        return outputQueue.isEmpty() ? null : outputQueue.removeFirst();
+    public Data process(DataStartSignal signal) throws DataProcessingException {
+        pendingSignal = null;
+        outputQueue.add(signal);
+        Data start = getNextData();
+        int n = processFirstCepstrum(start);
+        computeFeatures(n);
+
+        if (pendingSignal != null)
+            outputQueue.add(pendingSignal);
+
+        return deque();
     }
 
-
-    private Data getNextData() throws DataProcessingException {
-        Data d = getPredecessor().getData();
-        while (d != null && !(d instanceof DoubleData || d instanceof DataEndSignal || d instanceof DataStartSignal || d instanceof SpeechEndSignal)) {
-            outputQueue.add(d);
-            d = getPredecessor().getData();
-        }
-
-        return d;
+    private Data processEndSignal(Signal signal) {
+        // When the DataEndSignal is right at the boundary.
+        int n = replicateLastCepstrum();
+        computeFeatures(n);
+        outputQueue.add(signal);
+        return deque();
     }
 
+    @Override
+    public Data process(DataEndSignal signal) throws DataProcessingException {
+        return processEndSignal(signal);
+    }
+
+    @Override
+    public Data process(SpeechEndSignal signal) throws DataProcessingException {
+        return processEndSignal(signal);
+    }
 
     /**
-     * Replicate the given cepstrum Data object into the first window+1 number of frames in the cepstraBuffer. This is
-     * the first cepstrum in the segment.
+     * Replicate the given cepstrum Data object into the first window+1 number
+     * of frames in the cepstraBuffer. This is the first cepstrum in the
+     * segment.
      *
      * @param cepstrum the Data to replicate
      * @return the number of Features that can be computed
@@ -164,7 +171,8 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
                     if (next instanceof DoubleData) {
                         // just a cepstra
                         addCepstrum((DoubleData) next);
-                    } else if (next instanceof DataEndSignal || next instanceof SpeechEndSignal) {
+                    } else if (next instanceof DataEndSignal
+                            || next instanceof SpeechEndSignal) {
                         // end of segment cepstrum
                         pendingSignal = (Signal) next;
                         replicateLastCepstrum();
@@ -179,7 +187,6 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
         }
     }
 
-
     /**
      * Adds the given DoubleData object to the cepstraBuffer.
      *
@@ -190,9 +197,9 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
         bufferPosition %= cepstraBufferSize;
     }
 
-
     /**
-     * Replicate the last frame into the last window number of frames in the cepstraBuffer.
+     * Replicate the last frame into the last window number of frames in the
+     * cepstraBuffer.
      *
      * @return the number of replicated Cepstrum
      */
@@ -210,7 +217,6 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
         }
         return window;
     }
-
 
     /**
      * Converts the Cepstrum data in the cepstraBuffer into a FeatureFrame.
@@ -230,13 +236,11 @@ public abstract class AbstractFeatureExtractor extends BaseDataProcessor {
         getTimer().stop();
     }
 
-
     /** Computes the next Feature. */
     private void computeFeature() {
         Data feature = computeNextFeature();
         outputQueue.add(feature);
     }
-
 
     /**
      * Computes the next feature. Advances the pointers as well.

@@ -15,6 +15,7 @@ package edu.cmu.sphinx.decoder.search;
 import edu.cmu.sphinx.decoder.scorer.Scoreable;
 import edu.cmu.sphinx.decoder.scorer.ScoreProvider;
 import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.DataProcessor;
 import edu.cmu.sphinx.linguist.HMMSearchState;
 import edu.cmu.sphinx.linguist.SearchState;
 import edu.cmu.sphinx.linguist.UnitSearchState;
@@ -47,7 +48,7 @@ public class Token implements Scoreable {
     private float logInsertionScore;
     private float logAcousticScore;
     private float logWorkingScore;
-    
+
     private final SearchState searchState;
 
     private int location;
@@ -73,7 +74,7 @@ public class Token implements Scoreable {
                  SearchState state,
                  float logTotalScore,
                  float logInsertionScore,
-                 float logLanguageScore,                 
+                 float logLanguageScore,
                  int frameNumber) {
         this.predecessor = predecessor;
         this.searchState = state;
@@ -105,7 +106,7 @@ public class Token implements Scoreable {
      * @param predecessor      the predecessor Token
      */
     public Token(Token predecessor,
-                 float logTotalScore, 
+                 float logTotalScore,
                  float logAcousticScore,
                  float logInsertionScore,
                  float logLanguageScore) {
@@ -164,14 +165,14 @@ public class Token implements Scoreable {
 
 
     /**
-     * Calculates a score against the given feature. The score can be retrieved 
+     * Calculates a score against the given feature. The score can be retrieved
      * with get score. The token will keep a reference to the scored feature-vector.
      *
      * @param feature the feature to be scored
      * @return the score for the feature
      */
     public float calculateScore(Data feature) {
-        
+
         logAcousticScore = ((ScoreProvider) searchState).getScore(feature);
 
         logTotalScore += logAcousticScore;
@@ -199,7 +200,7 @@ public class Token implements Scoreable {
      * Gets the working score. The working score is used to maintain non-final
      * scores during the search. Some search algorithms such as bushderby use
      * the working score
-     * 
+     *
      * @return the working score (in logMath log base)
      */
     public float getWorkingScore() {
@@ -249,7 +250,7 @@ public class Token implements Scoreable {
     }
 
 
-    /** 
+    /**
      * Returns the acoustic score for this token (in logMath log base).
      * Acoustic score is a sum of frame GMM.
      *
@@ -518,5 +519,10 @@ public class Token implements Scoreable {
             tokenProps = new HashMap<String, Object>();
 
         return tokenProps;
+    }
+
+
+    public Data processBy(DataProcessor processor) {
+        return processor.process(this);
     }
 }

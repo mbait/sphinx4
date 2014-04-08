@@ -115,4 +115,8 @@ public class FloatData implements Data, Cloneable {
 
         return convertData;
     }
+
+    public Data processBy(DataProcessor processor) {
+        return processor.process(this);
+    }
 }

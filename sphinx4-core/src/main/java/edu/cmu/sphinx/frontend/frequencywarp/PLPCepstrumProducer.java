@@ -15,9 +15,10 @@ package edu.cmu.sphinx.frontend.frequencywarp;
 
 import edu.cmu.sphinx.frontend.BaseDataProcessor;
 import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataProcessingException;
 import edu.cmu.sphinx.frontend.DoubleData;
-import edu.cmu.sphinx.util.props.*;
+import edu.cmu.sphinx.util.props.PropertyException;
+import edu.cmu.sphinx.util.props.PropertySheet;
+import edu.cmu.sphinx.util.props.S4Integer;
 
 /**
  * Computes the PLP cepstrum from a given PLP Spectrum. The power spectrum has the amplitude compressed by computing the
@@ -116,34 +117,6 @@ public class PLPCepstrumProducer extends BaseDataProcessor {
         return compressedspectrum;
     }
 
-
-    /**
-     * Returns the next Data object, which is the PLP cepstrum of the input frame. However, it can also be other Data
-     * objects like a EndPointSignal.
-     *
-     * @return the next available Data object, returns null if no Data object is available
-     * @throws DataProcessingException if there is an error reading the Data objects
-     */
-    @Override
-    public Data getData() throws DataProcessingException {
-
-        Data input = getPredecessor().getData();
-        Data output = input;
-
-        getTimer().start();
-
-        if (input != null) {
-            if (input instanceof DoubleData) {
-                output = process((DoubleData) input);
-            }
-        }
-
-        getTimer().stop();
-
-        return output;
-    }
-
-
     /**
      * Process data, creating the PLP cepstrum from an input audio frame.
      *
@@ -151,7 +124,8 @@ public class PLPCepstrumProducer extends BaseDataProcessor {
      * @return a PLP Data frame
      * @throws IllegalArgumentException
      */
-    private Data process(DoubleData input) throws IllegalArgumentException {
+    @Override
+    public Data process(DoubleData input) throws IllegalArgumentException {
 
         double[] plpspectrum = input.getValues();
 

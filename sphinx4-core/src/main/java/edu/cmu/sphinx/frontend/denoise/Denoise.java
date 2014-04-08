@@ -11,29 +11,22 @@ package edu.cmu.sphinx.frontend.denoise;
 
 import java.util.Arrays;
 
-import edu.cmu.sphinx.frontend.BaseDataProcessor;
-import edu.cmu.sphinx.frontend.Data;
-import edu.cmu.sphinx.frontend.DataProcessingException;
-import edu.cmu.sphinx.frontend.DataStartSignal;
-import edu.cmu.sphinx.frontend.DoubleData;
-import edu.cmu.sphinx.util.props.PropertyException;
-import edu.cmu.sphinx.util.props.PropertySheet;
-import edu.cmu.sphinx.util.props.S4Double;
-import edu.cmu.sphinx.util.props.S4Integer;
+import edu.cmu.sphinx.frontend.*;
+import edu.cmu.sphinx.util.props.*;
 
 /**
  * The noise filter, same as implemented in sphinxbase/sphinxtrain/pocketsphinx.
- * 
+ *
  * Noise removal algorithm is inspired by the following papers Computationally
  * Efficient Speech Enchancement by Spectral Minina Tracking by G. Doblinger
- * 
+ *
  * Power-Normalized Cepstral Coefficients (PNCC) for Robust Speech Recognition
  * by C. Kim.
- * 
+ *
  * For the recent research and state of art see papers about IMRCA and A
  * Minimum-Mean-Square-Error Noise Reduction Algorithm On Mel-Frequency Cepstra
  * For Robust Speech Recognition by Dong Yu and others
- * 
+ *
  */
 public class Denoise extends BaseDataProcessor {
 
@@ -94,7 +87,7 @@ public class Denoise extends BaseDataProcessor {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see
      * edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.util
      * .props.PropertySheet)
@@ -113,23 +106,17 @@ public class Denoise extends BaseDataProcessor {
     }
 
     @Override
-    public Data getData() throws DataProcessingException {
-        Data inputData = getPredecessor().getData();
-        int i;
+    public Data process(DataStartSignal signal) throws DataProcessingException {
+        power = null;
+        noise = null;
+        floor = null;
+        peak = null;
+        return signal;
+    }
 
-        if (inputData instanceof DataStartSignal) {
-            power = null;
-            noise = null;
-            floor = null;
-            peak = null;
-            return inputData;
-        }
-        if (!(inputData instanceof DoubleData)) {
-            return inputData;
-        }
-
-        DoubleData inputDoubleData = (DoubleData) inputData;
-        double[] input = inputDoubleData.getValues();
+    @Override
+    public Data process(DoubleData data) throws DataProcessingException {
+        double[] input = data.getValues();
         int length = input.length;
 
         if (power == null)
@@ -140,7 +127,7 @@ public class Denoise extends BaseDataProcessor {
         estimateEnvelope(power, noise);
 
         double[] signal = new double[length];
-        for (i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             signal[i] = Math.max(power[i] - noise[i], 0.0);
         }
 
@@ -151,17 +138,17 @@ public class Denoise extends BaseDataProcessor {
         powerBoosting(signal);
 
         double[] gain = new double[length];
-        for (i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             gain[i] = signal[i] / (power[i] + EPS);
             gain[i] = Math.min(Math.max(gain[i], 1.0 / maxGain), maxGain);
         }
         double[] smoothGain = smooth(gain);
 
-        for (i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
             input[i] *= smoothGain[i];
         }
 
-        return inputData;
+        return data;
     }
 
     private double[] smooth(double[] gain) {

@@ -1,11 +1,11 @@
 /*
- * Copyright 1999-2002 Carnegie Mellon University.  
- * Portions Copyright 2002 Sun Microsystems, Inc.  
+ * Copyright 1999-2002 Carnegie Mellon University.
+ * Portions Copyright 2002 Sun Microsystems, Inc.
  * Portions Copyright 2002 Mitsubishi Electric Research Laboratories.
  * All Rights Reserved.  Use is subject to license terms.
- * 
+ *
  * See the file "license.terms" for information on usage and
- * redistribution of this file, and for a DISCLAIMER OF ALL 
+ * redistribution of this file, and for a DISCLAIMER OF ALL
  * WARRANTIES.
  *
  */
@@ -13,6 +13,8 @@
 
 package edu.cmu.sphinx.frontend.endpoint;
 
+import edu.cmu.sphinx.frontend.Data;
+import edu.cmu.sphinx.frontend.DataProcessor;
 import edu.cmu.sphinx.frontend.Signal;
 
 /** A signal that indicates the start of speech. */
@@ -43,5 +45,10 @@ public class SpeechStartSignal extends Signal {
     @Override
     public String toString() {
         return "SpeechStartSignal";
+    }
+
+    @Override
+    public Data processBy(DataProcessor processor) {
+        return processor.process(this);
     }
 }

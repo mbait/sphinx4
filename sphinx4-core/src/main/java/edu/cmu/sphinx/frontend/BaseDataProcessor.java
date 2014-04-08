@@ -10,49 +10,36 @@
  *
  */
 
-
 package edu.cmu.sphinx.frontend;
 
+import edu.cmu.sphinx.decoder.search.Token;
+import edu.cmu.sphinx.frontend.endpoint.SpeechClassifiedData;
+import edu.cmu.sphinx.frontend.endpoint.SpeechEndSignal;
+import edu.cmu.sphinx.frontend.endpoint.SpeechStartSignal;
 import edu.cmu.sphinx.util.props.ConfigurableAdapter;
 import edu.cmu.sphinx.util.Timer;
 import edu.cmu.sphinx.util.TimerPool;
 import edu.cmu.sphinx.util.Utilities;
 
-/**
- * An abstract DataProcessor implementing elements common to all concrete DataProcessors, such as name, predecessor, and
- * timer.
- */
-public abstract class BaseDataProcessor extends ConfigurableAdapter implements DataProcessor {
 
-    private DataProcessor predecessor;
+/**
+ * An abstract DataProcessor implementing elements common to all concrete
+ * DataProcessors, such as name, predecessor, and timer.
+ */
+public abstract class BaseDataProcessor extends ConfigurableAdapter
+        implements DataProcessor {
+
     private Timer timer;
 
     public BaseDataProcessor() {
     }
 
     /**
-     * Returns the processed Data output.
-     *
-     * @return an Data object that has been processed by this DataProcessor
-     * @throws DataProcessingException if a data processor error occurs
+     * Initializes this DataProcessor. This is typically called after the
+     * DataProcessor has been configured.
      */
-    public abstract Data getData() throws DataProcessingException;
-
-
-    /** Initializes this DataProcessor. This is typically called after the DataProcessor has been configured. */
     public void initialize() {
     }
-
-
-    /**
-     * Returns the predecessor DataProcessor.
-     *
-     * @return the predecessor
-     */
-    public DataProcessor getPredecessor() {
-        return predecessor;
-    }
-
 
     /**
      * Returns the timer this DataProcessor uses.
@@ -60,19 +47,44 @@ public abstract class BaseDataProcessor extends ConfigurableAdapter implements D
      * @return the timer
      */
     public synchronized Timer getTimer() {
-        if(timer == null)
-            this.timer = TimerPool.getTimer(this, Utilities.getReadable(getName()));
-            
+        if (timer == null)
+            this.timer = TimerPool.getTimer(this,
+                                            Utilities.getReadable(getName()));
+
         return timer;
     }
 
+    public Data process(FloatData data) throws DataProcessingException {
+        return data;
+    }
 
-    /**
-     * Sets the predecessor DataProcessor. This method allows dynamic reconfiguration of the front end.
-     *
-     * @param predecessor the new predecessor of this DataProcessor
-     */
-    public void setPredecessor(DataProcessor predecessor) {
-        this.predecessor = predecessor;
+    public Data process(DoubleData data) throws DataProcessingException {
+        return data;
+    }
+
+    public Data process(SpeechClassifiedData data)
+            throws DataProcessingException {
+        return data;
+    }
+
+    public Data process(DataStartSignal signal) throws DataProcessingException {
+        return signal;
+    }
+
+    public Data process(DataEndSignal signal) throws DataProcessingException {
+        return signal;
+    }
+
+    public Data process(SpeechEndSignal signal) throws DataProcessingException {
+        return signal;
+    }
+
+    public Data process(SpeechStartSignal signal)
+            throws DataProcessingException {
+        return signal;
+    }
+
+    public Data process(Token token) throws DataProcessingException {
+        return token;
     }
 }
